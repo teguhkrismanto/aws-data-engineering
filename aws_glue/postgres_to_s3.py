@@ -17,13 +17,13 @@ job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
 
 source = glueContext.create_dynamic_frame.from_catalog(
-    database="{glue_catalog_database}",
-    table_name="{glue_catalog_table}",
+    database="{GLUE_CATALOG_DATABASE}",
+    table_name="{GLUE_CATALOG_TABLE}",
     transformation_ctx="source",
     additional_options = {
-        "jobBookmarkKeys":["{timestamp_updated_column}"],
+        "jobBookmarkKeys":["{TIMESTAMP_UPDATED_COLUMN}"],
         "jobBookmarkKeysSortOrder":"asc",
-        "hashfield" : "{primary_key}", # mostly id
+        "hashfield" : "{PRIMARY_KEY}", # mostly id
         "hashpartitions": "10"
     }
 )
@@ -31,19 +31,19 @@ source = glueContext.create_dynamic_frame.from_catalog(
 spark_df = source.toDF() # convert glue dynamicframe to spark dataframe
 
 partition_df = (
-    spark_df.withColumn('year', functions.year(functions.col('{timestamp_updated_column}')))
-    .withColumn('month', functions.month(functions.col('{timestamp_updated_column}')))
-    .withColumn('day', functions.dayofmonth(functions.col('{timestamp_updated_column}')))
+    spark_df.withColumn('year', functions.year(functions.col('{TIMESTAMP_UPDATED_COLUMN}')))
+    .withColumn('month', functions.month(functions.col('{TIMESTAMP_UPDATED_COLUMN}')))
+    .withColumn('day', functions.dayofmonth(functions.col('{TIMESTAMP_UPDATED_COLUMN}')))
 ) # partition spark dataframe to year, month, day
 
-glue_df = DynamicFrame.fromDF(partition_df, glueContext, "glue_df")
+glue_df = DynamicFrame.fromDF(partition_df, glueContext, "glue_df") # convert spark dataframe to glue dynamicframe
 
 target = glueContext.write_dynamic_frame.from_options(
     frame=glue_df,
     connection_type="s3",
     format="parquet",
     connection_options={
-        "path": "{s3_bucket_path}",
+        "path": "{S3_BUCKET_PATH}",
         "partitionKeys": ["year", "month", "day"],
     },
     format_options={"compression": "gzip"},
